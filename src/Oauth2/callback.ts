@@ -43,6 +43,5 @@ export async function handleCallback({
   const response = await axios.post(TokenEndpoint, body.toString(), {
     headers,
   });
-
   return response.data as TokenResponse;
 }

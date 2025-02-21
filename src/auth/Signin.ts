@@ -1,5 +1,6 @@
+import { createGitHubAuthUrl } from "../Oauth2";
 
 export const signin = async () => {
-  const url = process.env.NEXT_PUBLIC_URL;
-  window.location.href = url + "/api/auth/signin";
+  const redirectUri = process.env.NEXT_PUBLIC_URL + "/api/auth/signin";
+  window.location.href = redirectUri;
 };
