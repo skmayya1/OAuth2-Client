@@ -1,7 +1,13 @@
 // auth0-client-sk/Integrations/handler.ts
 import { NextRequest, NextResponse } from "next/server";
 import { createGitHubAuthUrl, handleCallback } from "../../Oauth2";
-import { ValidateState } from "../../utils/state";
+import {
+  generateJWTsession,
+  generateState,
+  ValidateState,
+} from "../../utils/state";
+import { FetchUserData } from "./utils/fetchUserData";
+import { GithubAuthClient } from "types/github";
 
 export async function handler(req: NextRequest) {
   const callbackUrl = req.url;
@@ -17,7 +23,7 @@ export async function handler(req: NextRequest) {
         { error: "Missing configuration" },
         { status: 500 }
       );
-    } 
+    }
 
     const URL = createGitHubAuthUrl({
       clientId,
@@ -45,12 +51,28 @@ export async function handler(req: NextRequest) {
 
     try {
       const token = await handleCallback({ client, callbackUrl });
-      return NextResponse.json(token, {
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-          "Content-Type": "application/json",
-        },
+
+      const Data: GithubAuthClient = (
+        await FetchUserData({ access_token: token.access_token })
+      ).user;
+
+      const Encoded = generateJWTsession({ user: Data });
+
+      const response = NextResponse.redirect(
+        process.env.REDIRECT_URI as string
+      );
+
+      response.cookies.set({
+        name: "auth_token",
+        value: Encoded,
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        path: "/",
+        maxAge: 5 * 24 * 60 * 60,
       });
+
+      return response;
     } catch (error) {
       console.error("OAuth callback error:", error);
       return NextResponse.json(
@@ -63,17 +85,6 @@ export async function handler(req: NextRequest) {
         { status: 400 }
       );
     }
-  }
-
-  if (req.method === "OPTIONS") {
-    return new NextResponse(null, {
-      status: 204,
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization",
-      },
-    });
   }
 
   return NextResponse.json({ error: "Not found" }, { status: 404 });
