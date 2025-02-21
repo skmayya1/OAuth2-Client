@@ -55,5 +55,7 @@ export async function handleCallback({
   return response.data as TokenResponse;
 }
 
-
-//user generates the authorization url
+//user generates the authorization url 
+//callback extraction and verification
+//token exchange
+//user data fetch

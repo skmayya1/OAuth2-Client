@@ -2,7 +2,7 @@ import { GenerateState } from "../utils/state";
 
 export type OAuthClient = {
   clientId: string;
-  clientSecret: string;
+  clientSecret: string | null;
   redirectUri: string;
   state?: string[];
   authorizationEndpoint?: string;

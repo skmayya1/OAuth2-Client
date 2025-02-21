@@ -1,0 +1,1 @@
+import { createGitHubAuthUrl } from '../src'

@@ -1,11 +1,13 @@
 {
-  "name": "auth0",
-  "version": "1.0.0",
+  "name": "auth0-client-sk",
+  "version": "1.2.0",
   "description": "",
-  "main": "index.js",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "ts-node src/index.ts"
+    "build": "tsc",
+    "dev": "ts-node src/index.ts",
+    "prepare": "npm run build"
   },
   "keywords": [],
   "author": "",
@@ -15,6 +17,28 @@
   },
   "dependencies": {
     "axios": "^1.7.9",
+    "dotenv": "^16.4.7",
     "ts-node": "^10.9.2"
-  }
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    },
+    "./Oauth2": {
+      "import": "./dist/Oauth2/index.js",
+      "require": "./dist/Oauth2/index.js"
+    },
+    "./Providers": {
+      "import": "./dist/Providers/index.js",
+      "require": "./dist/Providers/index.js"
+    },
+    "./Auth": {
+      "import": "./dist/auth/index.js",
+      "require": "./dist/auth/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ]
 }
