@@ -1,3 +1,5 @@
+import { generateState } from "../utils/state";
+
 export type OAuthClient = {
   clientId: string;
   clientSecret: string | null;
@@ -13,7 +15,8 @@ export  function createGitHubAuthUrl({
   redirectUri,
   authorizationEndpoint,
 }: OAuthClient) {
-  const state = process.env.JWT_SECRET; 
+
+  const state = generateState();
   if (!state) {
     throw new Error("JWT_SECRET must be defined");
   }

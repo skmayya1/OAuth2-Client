@@ -1,6 +1,7 @@
 // auth0-client-sk/Integrations/handler.ts
 import { NextRequest, NextResponse } from "next/server";
 import { createGitHubAuthUrl, handleCallback } from "../../Oauth2";
+import { ValidateState } from "../../utils/state";
 
 export async function handler(req: NextRequest) {
   const callbackUrl = req.url;
@@ -16,7 +17,7 @@ export async function handler(req: NextRequest) {
         { error: "Missing configuration" },
         { status: 500 }
       );
-    }
+    } 
 
     const URL = createGitHubAuthUrl({
       clientId,
@@ -32,6 +33,15 @@ export async function handler(req: NextRequest) {
       clientSecret: process.env.CLIENT_SECRET as string,
       redirectUri: process.env.REDIRECT_URI as string,
     };
+
+    const valid = ValidateState(callbackUrl);
+    console.log("Valid state:", valid);
+    if (!valid) {
+      return NextResponse.json(
+        { error: "Invalid state in callback URL" },
+        { status: 400 }
+      );
+    }
 
     try {
       const token = await handleCallback({ client, callbackUrl });

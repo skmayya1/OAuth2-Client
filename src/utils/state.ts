@@ -12,3 +12,10 @@ export function ValidateState(CallbackURL: string) {
   }
   return true;
 }
+
+
+export function generateState(): string {
+  return jwt.sign({ valid: true }, process.env.JWT_SECRET as string, {
+    algorithm: "HS256",
+  });
+}

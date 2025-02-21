@@ -1,6 +1,6 @@
 {
   "name": "auth0-client-sk",
-  "version": "1.4.2",
+  "version": "1.4.6",
   "description": "",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -47,7 +47,7 @@
       "import": "./dist/auth/index.js",
       "require": "./dist/auth/index.js"
     },
-    "./Integrations": {
+    "./Integrations/NextJs": {
       "import": "./dist/Integrations/NextJs/index.js",
       "require": "./dist/Integrations/NextJs/index.js"
     }
