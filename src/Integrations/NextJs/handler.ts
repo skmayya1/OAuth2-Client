@@ -1,6 +1,8 @@
 // auth0-client-sk/Integrations/handler.ts
 import { NextRequest, NextResponse } from "next/server";
 import { createGitHubAuthUrl, handleCallback } from "../../Oauth2";
+import jwt from "jsonwebtoken";
+
 import {
   generateJWTsession,
   generateState,
@@ -84,6 +86,37 @@ export async function handler(req: NextRequest) {
         },
         { status: 400 }
       );
+    }
+  }
+
+  if (pathname.includes("/api/auth/signout")) {
+    // Create a response to redirect after signout
+    const response = NextResponse.redirect(
+      process.env.POST_LOGOUT_URL as string
+    );
+    // Delete the 'auth_token' cookie
+    response.cookies.delete("auth_token");
+
+    return response;
+  }
+
+  if (pathname.includes("/api/auth/session")) {
+    const token = req.cookies.get("auth_token")?.value;
+
+    if (token) {
+      try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET as string);
+
+        return NextResponse.json({ user: decoded });
+      } catch (error) {
+        console.error("Invalid token:", error);
+        return NextResponse.json(
+          { error: "Invalid or expired token" },
+          { status: 401 }
+        );
+      }
+    } else {
+      return NextResponse.json({ error: "No token found" }, { status: 401 });
     }
   }
 
