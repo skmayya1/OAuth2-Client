@@ -20,6 +20,8 @@ export  function createGitHubAuthUrl({
   if (!state) {
     throw new Error("JWT_SECRET must be defined");
   }
+  console.log(state);
+  
   const AuthUrl =
     authorizationEndpoint || "https://github.com/login/oauth/authorize";
 

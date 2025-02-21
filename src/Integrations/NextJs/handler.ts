@@ -59,7 +59,7 @@ export async function handler(req: NextRequest) {
       const Encoded = generateJWTsession({ user: Data });
 
       const response = NextResponse.redirect(
-        process.env.REDIRECT_URI as string
+        process.env.POST_AUTH_URL as string
       );
 
       response.cookies.set({
