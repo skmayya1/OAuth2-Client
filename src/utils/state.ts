@@ -1,18 +1,14 @@
-import crypto from "crypto";
+import jwt from "jsonwebtoken";
 
-export function GenerateState() {
-  const state = crypto.randomBytes(16).toString("hex"); // Random 32-character string
-  sessionStorage.setItem("state", state);
-  return state;
-}
-
-export async function ValidateState(CallbackURL: string) {
+export function ValidateState(CallbackURL: string) {
   const url = new URL(CallbackURL);
-  const state = url.searchParams.get("state");
-  const sessionState = sessionStorage.getItem("state");
-  sessionState && sessionStorage.removeItem("state");
-  if (sessionState !== state) {
-    throw new Error("Invalid state");
+  const receivedState = url.searchParams.get("state");
+  if (!receivedState) {
+    throw new Error("State not found in callback URL");
+  }
+  const decoded = jwt.verify(receivedState, process.env.JWT_SECRET as string); 
+  if (!decoded) {
+    return false;
   }
   return true;
 }

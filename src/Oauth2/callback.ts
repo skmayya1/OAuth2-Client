@@ -11,24 +11,17 @@ interface TokenResponse {
   access_token: string;
   scope: string;
   token_type: string;
+  refresh_token: string;
 }
 
 export async function handleCallback({
   client,
   callbackUrl,
 }: CallbackTypes): Promise<TokenResponse> {
-    const TokenEndpoint = "https://github.com/login/oauth/access_token";
-    
-  // Validate the state
-  const isvalid = await ValidateState(callbackUrl);
 
-  if (!isvalid) {
-    throw new Error("Invalid state");
-  }
+  const TokenEndpoint = "https://github.com/login/oauth/access_token";
 
-  // Token Exhange
   const url = new URL(callbackUrl);
-
   const code = url.searchParams.get("code");
 
   if (!code) {
@@ -36,26 +29,20 @@ export async function handleCallback({
   }
 
   const body = new URLSearchParams();
-  const headers: Record<string, any> = {
-    "content-type": "application/x-www-form-urlencoded",
-    accept: "application/json",
-    "user-agent": "oauth2-github",
-  };
-
   body.append("client_id", client.clientId);
-  body.append("client_secret", client.clientSecret);
+  body.append("client_secret", client.clientSecret as string);
   body.append("code", code);
   body.append("redirect_uri", client.redirectUri);
 
-  const response = await axios.post(TokenEndpoint, {
+  const headers = {
+    "Content-Type": "application/x-www-form-urlencoded",
+    Accept: "application/json",
+    "User-Agent": "oauth2-github",
+  };
+
+  const response = await axios.post(TokenEndpoint, body.toString(), {
     headers,
-    body,
   });
-    
+
   return response.data as TokenResponse;
 }
-
-//user generates the authorization url 
-//callback extraction and verification
-//token exchange
-//user data fetch

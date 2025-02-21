@@ -1,5 +1,3 @@
-import { GenerateState } from "../utils/state";
-
 export type OAuthClient = {
   clientId: string;
   clientSecret: string | null;
@@ -10,12 +8,15 @@ export type OAuthClient = {
 
 const DEFAULT_SCOPES = ["read:user", "user:email"];
 
-export function createGitHubAuthUrl({
+export  function createGitHubAuthUrl({
   clientId,
   redirectUri,
   authorizationEndpoint,
 }: OAuthClient) {
-  const state = GenerateState(); // Generate a CSRF state token
+  const state = process.env.JWT_SECRET; 
+  if (!state) {
+    throw new Error("JWT_SECRET must be defined");
+  }
   const AuthUrl =
     authorizationEndpoint || "https://github.com/login/oauth/authorize";
 
