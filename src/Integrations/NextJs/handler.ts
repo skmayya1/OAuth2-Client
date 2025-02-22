@@ -20,7 +20,7 @@ export async function handler(req: NextRequest) {
     const redirectUri = process.env.REDIRECT_URI;
 
     if (!clientId || !redirectUri) {
-      console.error("Missing NEXT_PUBLIC environment variables");
+      console.error("Missing  environment variables");
       return NextResponse.json(
         { error: "Missing configuration" },
         { status: 500 }

@@ -1,6 +1,6 @@
 {
   "name": "auth0-client-sk",
-  "version": "1.6.5",
+  "version": "1.6.7",
   "description": "",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -54,6 +54,10 @@
     "./types": {
       "import": "./dist/types/index.js",
       "require": "./dist/types/index.js"
+    },
+    "./vanilla":{
+      "import": "./dist/Integrations/VanillaJs/index.js",
+      "require": "./dist/Integrations/VanillaJs/index.js"
     }
   },
   "files": [
