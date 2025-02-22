@@ -1,8 +1,9 @@
+"use client"
 import { useState, useEffect } from 'react';
 
-export async function getClientSession() {
+ async function getClientSession() {
   try {
-    const response = await fetch('/api/auth/user');
+    const response = await fetch('/api/auth/session');
     
     if (!response.ok) {
       throw new Error('Failed to fetch session');

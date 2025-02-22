@@ -2,6 +2,8 @@ import { ValidateState } from "../utils/state";
 import { OAuthClient } from "./create-authorization-url";
 import axios from "axios";
 
+import { } from "../Integrations/NextJs"
+
 type CallbackTypes = {
   client: OAuthClient;
   callbackUrl: string;

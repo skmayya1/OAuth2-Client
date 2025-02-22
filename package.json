@@ -1,6 +1,6 @@
 {
   "name": "auth0-client-sk",
-  "version": "1.5.4",
+  "version": "1.5.9",
   "description": "",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
