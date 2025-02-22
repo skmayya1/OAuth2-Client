@@ -60,6 +60,7 @@ export async function handler(req: NextRequest) {
 
       const Encoded = generateJWTsession({ user: Data });
 
+
       const response = NextResponse.redirect(
         process.env.POST_AUTH_URL as string
       );
