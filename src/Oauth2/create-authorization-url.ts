@@ -10,18 +10,18 @@ export type OAuthClient = {
 
 const DEFAULT_SCOPES = ["read:user", "user:email"];
 
-export  function createGitHubAuthUrl({
+export function createGitHubAuthUrl({
   clientId,
   redirectUri,
   authorizationEndpoint,
 }: OAuthClient) {
-
   const state = generateState();
+
   if (!state) {
     throw new Error("JWT_SECRET must be defined");
   }
   console.log(state);
-  
+
   const AuthUrl =
     authorizationEndpoint || "https://github.com/login/oauth/authorize";
 

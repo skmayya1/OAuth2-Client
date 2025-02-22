@@ -31,3 +31,4 @@ export function generateJWTsession({
     expiresIn: "5d",
   });
 }
+
