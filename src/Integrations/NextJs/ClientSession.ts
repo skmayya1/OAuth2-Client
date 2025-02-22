@@ -1,12 +1,19 @@
-"use client"
-import { useState, useEffect } from 'react';
+"use client";
+import { useState, useEffect } from "react";
+import { GithubAuthClient } from "types";
 
- async function getClientSession() {
+interface Session {
+  user: GithubAuthClient | null;
+  isPending: boolean;
+  isAuthenticated: boolean;
+}
+
+async function getClientSession() {
   try {
-    const response = await fetch('/api/auth/session');
-    
+    const response = await fetch("/api/auth/session");
+
     if (!response.ok) {
-      throw new Error('Failed to fetch session');
+      throw new Error("Failed to fetch session");
     }
     const session = await response.json();
     const isAuthenticated = !!session.user;
@@ -17,7 +24,7 @@ import { useState, useEffect } from 'react';
 }
 
 export function useClientSession() {
-  const [session, setSession] = useState({
+  const [session, setSession] = useState<Session>({
     user: null,
     isPending: true,
     isAuthenticated: false,
