@@ -43,6 +43,7 @@ export async function exchangeForToken(config: exchangeForTokenTypes) {
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
           Accept: "application/json",
+          "cache-control": "no-cache",
         },
       }
     );

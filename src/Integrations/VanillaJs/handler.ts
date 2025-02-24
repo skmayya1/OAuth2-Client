@@ -6,11 +6,12 @@ import { generateAndStoreState, validateState } from "./utils/State";
 type OAuthConfigTypes = {
   client_id: string;
   redirect_uri: string;
+  oktaDomain:string
 };
 
-const URLS = {
-  Authorize: "https://gitlab.com/oauth/authorize",
-  Token: "https://gitlab.com/oauth/token",
+const URLSENDPOINT = {
+  Authorize: "/oauth/authorize",
+  Token: "/oauth/token",
 } as const;
 
 const DEFAULT_SCOPES = ["profile", "email"];
@@ -19,10 +20,12 @@ export class OAuthClient {
   private client_id: string;
   private redirect_uri: string;
   private scopes: string[] = DEFAULT_SCOPES;
+  private oktaDomain: string;
 
   constructor(AuthConfig: OAuthConfigTypes) {
     this.client_id = AuthConfig.client_id;
     this.redirect_uri = AuthConfig.redirect_uri;
+    this.oktaDomain = "https://"+AuthConfig.oktaDomain;
   }
 
   public async Authorize() {
@@ -39,9 +42,8 @@ export class OAuthClient {
       client_id: this.client_id,
       redirect_uri: this.redirect_uri,
       code_challenge: pkce.codeChallenge,
-      scopes: this.scopes,
       state: state,
-      url: URLS.Authorize,
+      url: this.oktaDomain +URLSENDPOINT.Authorize,
     });
 
     if (!url) {
@@ -82,7 +84,7 @@ export class OAuthClient {
       client_id: this.client_id,
       code: code,
       redirect_uri: this.redirect_uri,
-      url: URLS.Token,
+      url:this.oktaDomain + URLSENDPOINT.Token,
     });
 
     if (token.error) {
