@@ -1,11 +1,13 @@
 import axios from "axios";
 
-type TokenData = {
+export type TokenData = {
   access_token: string;
   token_type: string;
   expires_in: number;
-  refresh_token: string;
+  scope: string;
+  id_token: string;
   created_at: number;
+  refresh_token: string;
 };
 
 type TokenError = {
@@ -53,8 +55,8 @@ export async function exchangeForToken(config: exchangeForTokenTypes) {
         error: response.data.error_description || response.data.error,
       };
     }
-
     return { data: response.data as TokenData };
+
   } catch (error: any) {
     console.error("Error exchanging token:", error);
     return {

@@ -1,3 +1,4 @@
+import { AddSession } from "./utils/AddSession";
 import { exchangeForToken } from "./utils/exchangeForToken";
 import { generateAuthUrl } from "./utils/GenerateAuthUrl";
 import { generatePKCECodes } from "./utils/generatePKCECodes";
@@ -6,12 +7,13 @@ import { generateAndStoreState, validateState } from "./utils/State";
 type OAuthConfigTypes = {
   client_id: string;
   redirect_uri: string;
-  oktaDomain:string
+  oktaDomain: string;
 };
 
 const URLSENDPOINT = {
-  Authorize: "/oauth/authorize",
-  Token: "/oauth/token",
+  Authorize: "/oauth2/v1/authorize",
+  Token: "/oauth2/v1/token",
+  Info: "/api/v1/users/me",
 } as const;
 
 const DEFAULT_SCOPES = ["profile", "email"];
@@ -25,7 +27,7 @@ export class OAuthClient {
   constructor(AuthConfig: OAuthConfigTypes) {
     this.client_id = AuthConfig.client_id;
     this.redirect_uri = AuthConfig.redirect_uri;
-    this.oktaDomain = "https://"+AuthConfig.oktaDomain;
+    this.oktaDomain = "https://" + AuthConfig.oktaDomain;
   }
 
   public async Authorize() {
@@ -43,7 +45,7 @@ export class OAuthClient {
       redirect_uri: this.redirect_uri,
       code_challenge: pkce.codeChallenge,
       state: state,
-      url: this.oktaDomain +URLSENDPOINT.Authorize,
+      url: this.oktaDomain + URLSENDPOINT.Authorize,
     });
 
     if (!url) {
@@ -78,24 +80,26 @@ export class OAuthClient {
       };
     }
     console.log(this);
-    
 
     const token = await exchangeForToken({
       client_id: this.client_id,
       code: code,
       redirect_uri: this.redirect_uri,
-      url:this.oktaDomain + URLSENDPOINT.Token,
+      url: this.oktaDomain + URLSENDPOINT.Token,
     });
 
-    if (token.error) {
+    if (token.error || !token.data) {
       return {
         error: token.error,
       };
     }
+
     console.log(token.data);
+    
+
+    window.location.href = "/";
     return {
       ok: true,
     };
   }
 }
-
