@@ -1,147 +1,98 @@
-// Types and interfaces
-interface OAuth2Config {
-  clientId: string;
-  redirectUri: string;
-  scope?: string[];
-  state?: string;
-  allowSignup?: boolean;
-}
+import { exchangeForToken } from "./utils/exchangeForToken";
+import { generateAuthUrl } from "./utils/GenerateAuthUrl";
+import { generatePKCECodes } from "./utils/generatePKCECodes";
+import { generateAndStoreState, validateState } from "./utils/State";
 
-interface TokenResponse {
-  access_token: string;
-  token_type: string;
-  scope: string;
-}
+type OAuthConfigTypes = {
+  client_id: string;
+  redirect_uri: string;
+};
 
-
-const DEFAULT_SCOPES = ["read:user", "user:email"];
-
-const GITHUB_URLS = {
-  authorize: "https://github.com/login/oauth/authorize",
-  token: "https://github.com/login/oauth/access_token",
+const URLS = {
+  Authorize: "https://gitlab.com/oauth/authorize",
+  Token: "https://gitlab.com/oauth/token",
 } as const;
 
-export class OAuth2Client {
-  private  clientId: string;
-  private  redirectUri: string;
-  private  storage: Storage;
-  private  defaultScopes:  string[];
+const DEFAULT_SCOPES = ["profile", "email"];
 
-  constructor(config: OAuth2Config) {
-    this.clientId = config.clientId;
-    this.redirectUri = config.redirectUri;
-    this.storage = window.sessionStorage;
-    this.defaultScopes = DEFAULT_SCOPES;
+export class OAuthClient {
+  private client_id: string;
+  private redirect_uri: string;
+  private scopes: string[] = DEFAULT_SCOPES;
+
+  constructor(AuthConfig: OAuthConfigTypes) {
+    this.client_id = AuthConfig.client_id;
+    this.redirect_uri = AuthConfig.redirect_uri;
   }
 
-  public async authorize(options: Partial<OAuth2Config> = {}): Promise<void> {
-    try {
-      const url = this.createAuthorizationUrl({
-        clientId: options.clientId || this.clientId,
-        redirectUri: options.redirectUri || this.redirectUri,
-        scope: options.scope || this.defaultScopes,
-        allowSignup: options.allowSignup,
-      });
-
-      window.location.href = url;
-    } catch (error) {
-      throw new Error(`Authorization failed: ${error}`);
+  public async Authorize() {
+    if (!this.client_id || !this.redirect_uri) {
+      return {
+        error: "Client id , redirect url is missing",
+      };
     }
+    const pkce = await generatePKCECodes();
+
+    const state = generateAndStoreState();
+
+    const url = generateAuthUrl({
+      client_id: this.client_id,
+      redirect_uri: this.redirect_uri,
+      code_challenge: pkce.codeChallenge,
+      scopes: this.scopes,
+      state: state,
+      url: URLS.Authorize,
+    });
+
+    if (!url) {
+      return {
+        error: "error generating url",
+      };
+    }
+
+    window.location.href = url;
+
+    return {
+      ok: true,
+    };
+    //returns a promise , if error , {  error}
   }
 
+  public async HandleCallback() {
+    const url = new URL(window.location.href);
 
-  public async handleCallback(callbackUrl: string): Promise<TokenResponse> {
-    const url = new URL(callbackUrl);
     const code = url.searchParams.get("code");
     const state = url.searchParams.get("state");
-    const error = url.searchParams.get("error");
 
-    if (error) {
-      throw new Error(`GitHub OAuth error: ${error}`);
+    if (!code || !state) {
+      return {
+        error: "code or state is missing",
+      };
     }
 
-    if (!code) {
-      throw new Error("No authorization code received");
+    if (!validateState(state)) {
+      return {
+        error: "state is invalid",
+      };
     }
 
-    this.validateState(state);
-
-    return await this.exchangeCodeForToken(code);
-  }
-
-
-  private createAuthorizationUrl(config: OAuth2Config): string {
-    const state = this.generateAndStoreState();
-
-    const url = new URL(GITHUB_URLS.authorize);
-    const params = new URLSearchParams({
-      client_id: config.clientId,
-      redirect_uri: config.redirectUri,
-      scope: (config.scope || this.defaultScopes).join(" "),
-      state: state,
-      allow_signup: String(config.allowSignup ?? true),
-    });
-
-    return `${url}?${params.toString()}`;
-  }
-
-
-  private async exchangeCodeForToken(code: string): Promise<TokenResponse> {
-    const params = new URLSearchParams({
-      client_id: this.clientId,
-      redirect_uri: this.redirectUri,
+    const token = await exchangeForToken({
+      client_id: this.client_id,
       code: code,
+      redirect_uri: this.redirect_uri,
+      url: URLS.Token,
     });
 
-    try {
-      const response = await fetch(GITHUB_URLS.token, {
-        method: "POST",
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: params.toString(),
-      });
-
-      if (!response.ok) {
-        throw new Error("Token exchange failed");
-      }
-
-      const data = await response.json();
-
-      if ("error" in data) {
-        throw new Error(`Token error: ${data.error_description || data.error}`);
-      }
-
-      return data as TokenResponse;
-    } catch (error) {
-      throw new Error(`Token exchange failed: ${error}`);
+    if (token.error) {
+      return {
+        error: token.error,
+      };
     }
+    console.log(token.data);
+    return {
+      ok: true,
+    };
   }
-
-
-  private generateAndStoreState(): string {
-    const state = this.generateSecureState();
-    this.storage.setItem("oauth_state", state);
-    return state;
-  }
-
-  private validateState(state: string | null): void {
-    const storedState = this.storage.getItem("oauth_state");
-    this.storage.removeItem("oauth_state"); // Clear state after use
-
-    if (!state || !storedState || state !== storedState) {
-      throw new Error("Invalid state parameter");
-    }
-  }
-
-  private generateSecureState(length: number = 32): string {
-    const array = new Uint8Array(length);
-    window.crypto.getRandomValues(array);
-    return Array.from(array, (byte) => byte.toString(16).padStart(2, "0")).join(
-      ""
-    );
-  }
-
-
 }
+
+//5082e3cd6fe2911854b0b2faa347ea643ecb927a352b3c5a5e681c14bbd486ab

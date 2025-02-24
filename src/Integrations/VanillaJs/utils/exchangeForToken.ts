@@ -1,0 +1,61 @@
+import axios from "axios";
+
+type TokenData = {
+  access_token: string;
+  token_type: string;
+  expires_in: number;
+  refresh_token: string;
+  created_at: number;
+};
+
+type TokenError = {
+  error: string;
+  error_description?: string;
+};
+
+type exchangeForTokenTypes = {
+  client_id: string;
+  code: string;
+  url: string;
+  redirect_uri: string;
+};
+
+export async function exchangeForToken(config: exchangeForTokenTypes) {
+  const code_verifier = window.sessionStorage.getItem("code_verifier");
+  if (!code_verifier) {
+    return {
+      error: "Code verifier not found",
+    };
+  }
+
+  const params = new URLSearchParams();
+  params.append("client_id", config.client_id);
+  params.append("code", config.code);
+  params.append("redirect_uri", config.redirect_uri);
+  params.append("grant_type", "authorization_code");
+  params.append("code_verifier", code_verifier);
+
+  window.sessionStorage.removeItem("code_verifier");
+
+  const response = await axios.post<TokenData | TokenError>(
+    config.url,
+    params,
+    {
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        Accept: "application/json",
+      },
+    }
+  );
+
+  if ("error" in response.data) {
+    const errorData = response.data as TokenError;
+    return {
+      error: errorData.error_description || errorData.error,
+    };
+  }
+
+  return {
+    data: response.data as TokenData,
+  };
+}
