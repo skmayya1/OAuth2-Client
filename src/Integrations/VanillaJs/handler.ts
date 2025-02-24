@@ -75,6 +75,8 @@ export class OAuthClient {
         error: "state is invalid",
       };
     }
+    console.log(this);
+    
 
     const token = await exchangeForToken({
       client_id: this.client_id,
@@ -95,4 +97,3 @@ export class OAuthClient {
   }
 }
 
-//5082e3cd6fe2911854b0b2faa347ea643ecb927a352b3c5a5e681c14bbd486ab

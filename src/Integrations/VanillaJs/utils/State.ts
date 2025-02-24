@@ -7,5 +7,7 @@ export  function generateAndStoreState(): string {
 }
   
 export function validateState(state: string): boolean {
-    return window.sessionStorage.getItem("oauth_state") === state;
+    const ExistingState = window.sessionStorage.getItem("oauth_state");
+    window.sessionStorage.removeItem("oauth_state");
+    return ExistingState === state;
 }

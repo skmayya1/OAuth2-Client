@@ -21,41 +21,45 @@ type exchangeForTokenTypes = {
 };
 
 export async function exchangeForToken(config: exchangeForTokenTypes) {
-  const code_verifier = window.sessionStorage.getItem("code_verifier");
-  if (!code_verifier) {
-    return {
-      error: "Code verifier not found",
-    };
-  }
-
-  const params = new URLSearchParams();
-  params.append("client_id", config.client_id);
-  params.append("code", config.code);
-  params.append("redirect_uri", config.redirect_uri);
-  params.append("grant_type", "authorization_code");
-  params.append("code_verifier", code_verifier);
-
-  window.sessionStorage.removeItem("code_verifier");
-
-  const response = await axios.post<TokenData | TokenError>(
-    config.url,
-    params,
-    {
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-        Accept: "application/json",
-      },
+  try {
+    const code_verifier = window.sessionStorage.getItem("code_verifier");
+    if (!code_verifier) {
+      return { error: "Code verifier not found" };
     }
-  );
 
-  if ("error" in response.data) {
-    const errorData = response.data as TokenError;
+    const params = new URLSearchParams();
+    params.append("client_id", config.client_id);
+    params.append("code", config.code);
+    params.append("redirect_uri", config.redirect_uri);
+    params.append("grant_type", "authorization_code");
+    params.append("code_verifier", code_verifier);
+
+    window.sessionStorage.removeItem("code_verifier");
+
+    const response = await axios.post<TokenData | TokenError>(
+      config.url,
+      params,
+      {
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          Accept: "application/json",
+        },
+      }
+    );
+
+    if ("error" in response.data) {
+      return {
+        error: response.data.error_description || response.data.error,
+      };
+    }
+
+    return { data: response.data as TokenData };
+  } catch (error: any) {
+    console.error("Error exchanging token:", error);
     return {
-      error: errorData.error_description || errorData.error,
+      error: error.response?.data?.error_description || "Something went wrong",
     };
   }
-
-  return {
-    data: response.data as TokenData,
-  };
 }
+
+
