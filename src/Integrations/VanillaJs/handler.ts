@@ -13,10 +13,12 @@ type OAuthConfigTypes = {
 const URLSENDPOINT = {
   Authorize: "/oauth2/v1/authorize",
   Token: "/oauth2/v1/token",
-  Info: "/api/v1/users/me",
+  Info: "/oauth2/v1/userinfo",
 } as const;
 
-const DEFAULT_SCOPES = ["profile", "email", "okta.users.read"];
+const DEFAULT_SCOPES = [
+  "okta.users.read.self",
+];
 
 export class OAuthClient {
   private client_id: string;
@@ -97,6 +99,14 @@ export class OAuthClient {
     }
     
     console.log(token.data);
+
+    const data = await AddSession({
+      tokenData: token.data,
+      url: this.oktaDomain + URLSENDPOINT.Info,
+    })
+
+    console.log(data);
+    
 
     return {
       ok: true,
