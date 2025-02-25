@@ -25,6 +25,7 @@ export class OAuthClient {
   private redirect_uri: string;
   private scopes: string[] = DEFAULT_SCOPES;
   private oktaDomain: string;
+  private post_auth_uri: string;
 
   constructor(AuthConfig: OAuthConfigTypes) {
     this.client_id = AuthConfig.client_id;
@@ -49,6 +50,8 @@ export class OAuthClient {
       state: state,
       url: this.oktaDomain + URLSENDPOINT.Authorize,
     });
+
+    window.sessionStorage.removeItem("code_challenge");
 
     if (!url) {
       return {
@@ -75,15 +78,12 @@ export class OAuthClient {
         error: "code or state is missing",
       };
     }
-
     if (!validateState(state)) {
       return {
         error: "state is invalid",
       };
     }
     console.log(this);
-
-
 
     const token = await exchangeForToken({
       client_id: this.client_id,
@@ -97,16 +97,12 @@ export class OAuthClient {
         error: token.error,
       };
     }
-    
-    console.log(token.data);
 
     const data = await AddSession({
       tokenData: token.data,
       url: this.oktaDomain + URLSENDPOINT.Info,
     })
 
-    console.log(data);
-    
 
     return {
       ok: true,

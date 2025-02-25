@@ -13,7 +13,7 @@ const params = new URLSearchParams({
   response_type: "code",
   client_id: Config.client_id,
   redirect_uri: Config.redirect_uri,
-  scope: ["openid", "profile", "email"].join(" "),
+  scope: ["openid", "profile", "email", "offline_access"].join(" "),
   state: Config.state,
   code_challenge: Config.code_challenge,
   code_challenge_method: "S256",

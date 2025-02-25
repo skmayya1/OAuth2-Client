@@ -54,9 +54,7 @@ export async function exchangeForToken(config: exchangeForTokenTypes) {
       return {
         error: response.data.error_description || response.data.error,
       };
-    }
-    console.log(response.data);
-    
+    }    
     return { data: response.data as TokenData };
 
   } catch (error: any) {
