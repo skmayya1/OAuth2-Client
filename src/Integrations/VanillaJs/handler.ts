@@ -4,6 +4,7 @@ import { exchangeForToken } from "./utils/exchangeForToken";
 import { generateAuthUrl } from "./utils/GenerateAuthUrl";
 import { generatePKCECodes } from "./utils/generatePKCECodes";
 import { generateAndStoreState, validateState } from "./utils/State";
+import { refreshToken } from "./utils/ResponseToken";
 
 type OAuthConfigTypes = {
   client_id: string;
@@ -17,8 +18,6 @@ const URLSENDPOINT = {
   Token: "/oauth2/v1/token",
   Info: "/oauth2/v1/userinfo",
 } as const;
-
-
 
 const DEFAULT_SCOPES = ["okta.users.read.self"];
 
@@ -124,7 +123,11 @@ export class OAuthClient {
     window.location.href = this.post_auth_uri;
   }
 
-  public async Getuser():Promise<{session:OAUTH | null,user:USER | null,error?:string | null}> {
+  public async Getuser(): Promise<{
+    session: OAUTH | null;
+    user: USER | null;
+    error?: string | null;
+  }> {
     const session = window.sessionStorage.getItem("OAuth_");
     const user = window.sessionStorage.getItem("User");
 
@@ -140,5 +143,28 @@ export class OAuthClient {
       user: JSON.parse(user) as USER,
       error: null,
     };
+  }
+
+  public async RefreshToken() {
+    const session = window.sessionStorage.getItem("OAuth_");
+
+    const token = await refreshToken({
+      client_id: this.client_id,
+      redirect_uri: this.redirect_uri,
+      url: this.oktaDomain + URLSENDPOINT.Token,
+      refresh_token: JSON.parse(session || "{}").refresh_token as string,
+      scope: "offline_access openid profile",
+    });
+    if (!token.data) {
+      return {
+        error: "Token data is undefined",
+      };
+    }
+
+    const data = await AddSession({
+      tokenData: token.data,
+      url: this.oktaDomain + URLSENDPOINT.Info,
+    });
+
   }
 }
