@@ -1,3 +1,4 @@
+import { OAUTH, USER } from "types/interfaces";
 import { AddSession } from "./utils/AddSession";
 import { exchangeForToken } from "./utils/exchangeForToken";
 import { generateAuthUrl } from "./utils/GenerateAuthUrl";
@@ -8,6 +9,7 @@ type OAuthConfigTypes = {
   client_id: string;
   redirect_uri: string;
   oktaDomain: string;
+  post_auth_uri: string;
 };
 
 const URLSENDPOINT = {
@@ -16,9 +18,9 @@ const URLSENDPOINT = {
   Info: "/oauth2/v1/userinfo",
 } as const;
 
-const DEFAULT_SCOPES = [
-  "okta.users.read.self",
-];
+
+
+const DEFAULT_SCOPES = ["okta.users.read.self"];
 
 export class OAuthClient {
   private client_id: string;
@@ -31,6 +33,7 @@ export class OAuthClient {
     this.client_id = AuthConfig.client_id;
     this.redirect_uri = AuthConfig.redirect_uri;
     this.oktaDomain = "https://" + AuthConfig.oktaDomain;
+    this.post_auth_uri = AuthConfig.post_auth_uri;
   }
 
   public async Authorize() {
@@ -101,11 +104,41 @@ export class OAuthClient {
     const data = await AddSession({
       tokenData: token.data,
       url: this.oktaDomain + URLSENDPOINT.Info,
-    })
+    });
 
+    if (!data) {
+      return {
+        error: "something went wrong",
+      };
+    }
 
+    window.location.href = this.post_auth_uri;
     return {
       ok: true,
+    };
+  }
+
+  public async Logout() {
+    window.sessionStorage.removeItem("OAuth_");
+    window.sessionStorage.removeItem("User");
+    window.location.href = this.post_auth_uri;
+  }
+
+  public async Getuser():Promise<{session:OAUTH | null,user:USER | null,error?:string | null}> {
+    const session = window.sessionStorage.getItem("OAuth_");
+    const user = window.sessionStorage.getItem("User");
+
+    if (!session || !user) {
+      return {
+        session: null,
+        user: null,
+        error: "No active session or user found",
+      };
+    }
+    return {
+      session: JSON.parse(session) as OAUTH,
+      user: JSON.parse(user) as USER,
+      error: null,
     };
   }
 }
