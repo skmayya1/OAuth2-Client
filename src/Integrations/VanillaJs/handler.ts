@@ -100,6 +100,8 @@ export class OAuthClient {
       };
     }
 
+    await this.secureStore("OAuth_", token.data);
+
     const data = await AddSession({
       tokenData: token.data,
       url: this.oktaDomain + URLSENDPOINT.Info,
@@ -110,6 +112,7 @@ export class OAuthClient {
         error: "something went wrong",
       };
     }
+    await this.secureStore("user", data);
 
     window.location.href = this.post_auth_uri;
     return {
@@ -128,25 +131,34 @@ export class OAuthClient {
     user: USER | null;
     error?: string | null;
   }> {
-    const session = window.sessionStorage.getItem("OAuth_");
-    const user = window.sessionStorage.getItem("User");
+    try {
+      const session = await this.secureRetrieve("OAuth_");
+      const user = await this.secureRetrieve("user"); 
 
-    if (!session || !user) {
+      if (!session || !user) {
+        return {
+          session: null,
+          user: null,
+          error: "No active session or user found",
+        };
+      }
+
+      return {
+        session: session as OAUTH,
+        user: user as USER,
+        error: null,
+      };
+    } catch (error) {
+      console.error("Error in Getuser:", error);
       return {
         session: null,
         user: null,
-        error: "No active session or user found",
+        error: "Failed to retrieve session data",
       };
     }
-    return {
-      session: JSON.parse(session) as OAUTH,
-      user: JSON.parse(user) as USER,
-      error: null,
-    };
   }
-
   public async RefreshToken() {
-    const session = window.sessionStorage.getItem("OAuth_");
+    const session = await this.secureRetrieve("OAuth_");
 
     const token = await refreshToken({
       client_id: this.client_id,
@@ -161,10 +173,130 @@ export class OAuthClient {
       };
     }
 
+    await this.secureStore("OAuth_", token.data);
+
     const data = await AddSession({
       tokenData: token.data,
       url: this.oktaDomain + URLSENDPOINT.Info,
     });
+  }
 
+  private async encrypt(data: string): Promise<string> {
+    const encoder = new TextEncoder();
+    const keyData = encoder.encode(this.client_id);
+
+    const baseKey = await crypto.subtle.importKey(
+      "raw",
+      keyData,
+      { name: "PBKDF2" },
+      false,
+      ["deriveKey"]
+    );
+
+    const salt = encoder.encode(this.oktaDomain);
+
+    const key = await crypto.subtle.deriveKey(
+      {
+        name: "PBKDF2",
+        salt: salt,
+        iterations: 100000,
+        hash: "SHA-256",
+      },
+      baseKey,
+      { name: "AES-GCM", length: 256 },
+      false,
+      ["encrypt", "decrypt"]
+    );
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const encryptedContent = await crypto.subtle.encrypt(
+      {
+        name: "AES-GCM",
+        iv: iv,
+      },
+      key,
+      encoder.encode(data)
+    );
+    const encryptedBuffer = new Uint8Array(
+      iv.length + encryptedContent.byteLength
+    );
+    encryptedBuffer.set(iv, 0);
+    encryptedBuffer.set(new Uint8Array(encryptedContent), iv.length);
+    return btoa(String.fromCharCode(...Array.from(encryptedBuffer)));
+  }
+
+  private async decrypt(encryptedData: string): Promise<string> {
+    const encryptedBuffer = Uint8Array.from(atob(encryptedData), (c) =>
+      c.charCodeAt(0)
+    );
+
+    const iv = encryptedBuffer.slice(0, 12);
+    const ciphertext = encryptedBuffer.slice(12);
+
+    const encoder = new TextEncoder();
+    const keyData = encoder.encode(this.client_id);
+
+    const baseKey = await crypto.subtle.importKey(
+      "raw",
+      keyData,
+      { name: "PBKDF2" },
+      false,
+      ["deriveKey"]
+    );
+
+    const salt = encoder.encode(this.oktaDomain);
+
+    const key = await crypto.subtle.deriveKey(
+      {
+        name: "PBKDF2",
+        salt: salt,
+        iterations: 100000,
+        hash: "SHA-256",
+      },
+      baseKey,
+      { name: "AES-GCM", length: 256 },
+      false,
+      ["encrypt", "decrypt"]
+    );
+
+    try {
+      const decryptedContent = await crypto.subtle.decrypt(
+        {
+          name: "AES-GCM",
+          iv: iv,
+        },
+        key,
+        ciphertext
+      );
+
+      const decoder = new TextDecoder();
+      return decoder.decode(decryptedContent);
+    } catch (error) {
+      console.error("Decryption failed:", error);
+      throw new Error("Failed to decrypt data: Invalid key or corrupted data");
+    }
+  }
+
+  public async secureStore(key: string, data: any): Promise<void> {
+    const dataString = typeof data === "string" ? data : JSON.stringify(data);
+    const encryptedData = await this.encrypt(dataString);
+    window.sessionStorage.setItem(key, encryptedData);
+  }
+
+  public async secureRetrieve(key: string): Promise<any> {
+    const encryptedData = window.sessionStorage.getItem(key);
+    if (!encryptedData) {
+      return null;
+    }
+    try {
+      const decryptedString = await this.decrypt(encryptedData);
+      try {
+        return JSON.parse(decryptedString);
+      } catch {
+        return decryptedString;
+      }
+    } catch (error) {
+      console.error("Error retrieving secure data:", error);
+      return null;
+    }
   }
 }
