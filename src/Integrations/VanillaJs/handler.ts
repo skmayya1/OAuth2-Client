@@ -16,7 +16,7 @@ const URLSENDPOINT = {
   Info: "/api/v1/users/me",
 } as const;
 
-const DEFAULT_SCOPES = ["profile", "email"];
+const DEFAULT_SCOPES = ["profile", "email", "okta.users.read"];
 
 export class OAuthClient {
   private client_id: string;
@@ -81,6 +81,8 @@ export class OAuthClient {
     }
     console.log(this);
 
+
+
     const token = await exchangeForToken({
       client_id: this.client_id,
       code: code,
@@ -93,11 +95,9 @@ export class OAuthClient {
         error: token.error,
       };
     }
-
-    console.log(token.data);
     
+    console.log(token.data);
 
-    window.location.href = "/";
     return {
       ok: true,
     };
